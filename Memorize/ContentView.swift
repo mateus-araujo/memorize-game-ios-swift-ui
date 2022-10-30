@@ -36,20 +36,22 @@ struct Emoji {
 
 struct ContentView: View {
     @State var openedCards = [] as [Emoji]
+    @State var isRightCards = [] as [Emoji]
     var memorizedEmojis = [] as [Emoji]
     
     let emojis = travelAndPlaces
     let selectedEmojisCount = 8
     
-    init(openedCards: [Emoji] = [] as [Emoji], memorizedEmojis: [Emoji] = [] as [Emoji]) {
+    init(
+        openedCards: [Emoji] = [] as [Emoji],
+        memorizedEmojis: [Emoji] = [] as [Emoji]
+    ) {
         self.openedCards = openedCards
         
         var selectedEmojis = [] as [Emoji];
         
-        for id in 0..<(selectedEmojisCount) {
-            let arrayIndex = Int.random(in: 0..<emojis.count)
-            
-            let emoji = Emoji(id: id, string: emojis[arrayIndex])
+        for id in 0..<selectedEmojisCount {
+            let emoji = generateEmoji(id: id, selectedEmojis: selectedEmojis)
             
             selectedEmojis.append(emoji)
         }
@@ -68,8 +70,27 @@ struct ContentView: View {
         self.memorizedEmojis = selectedEmojis;
     }
     
-    func onPressCard(emoji: Emoji) {
-        let containsEmoji = openedCards.contains { element in
+    func generateEmoji(id: Int, selectedEmojis: [Emoji]) -> Emoji {
+        let randomIndex = Int.random(in: 0..<emojis.count)
+        let emoji = Emoji(id: id, string: emojis[randomIndex])
+        
+        let containsEmoji = selectedEmojis.contains { element in
+            if emoji.string == element.string {
+                return true
+            } else {
+                return false
+            }
+        }
+        
+        if containsEmoji {
+            return generateEmoji(id: id, selectedEmojis: selectedEmojis)
+        } else {
+            return emoji
+        }
+    }
+    
+    func checkIfCardIsFaceUp(emoji: Emoji) -> Bool {
+        let isFaceUp = openedCards.contains { element in
             if case emoji.id = element.id {
                 return true
             } else {
@@ -77,10 +98,53 @@ struct ContentView: View {
             }
         }
         
-        if case containsEmoji = true {
+        return isFaceUp;
+    }
+    
+    func checkIfCardIsAlreadyOpened(emoji: Emoji) -> Bool {
+        let isAlreadyOpened = openedCards.contains { element in
+            if (emoji.string == element.string && emoji.id != element.id) {
+                return true
+            } else {
+                return false
+            }
+        }
+        
+        return isAlreadyOpened;
+    }
+    
+    func checkIfCardIsRight(emoji: Emoji) -> Bool {
+        let isRight = isRightCards.contains { element in
+            if case emoji.string = element.string {
+                return true
+            } else {
+                return false
+            }
+        }
+        
+        return isRight
+    }
+        
+    func onPressCard(emoji: Emoji) {
+        if openedCards.count == 2 { return }
+        
+        let isFaceUp = checkIfCardIsFaceUp(emoji: emoji)
+        let isRight = checkIfCardIsAlreadyOpened(emoji: emoji)
+        
+        if (isRight) {
+            isRightCards.append(emoji)
+
+            return
+        }
+        
+        if (isFaceUp) {
             openedCards = openedCards.filter { $0.id != emoji.id }
         } else {
             openedCards.append(emoji)
+        }
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { // Change `2.0` to the desired number of seconds.
+            openedCards = []
         }
     }
     
@@ -92,15 +156,10 @@ struct ContentView: View {
                     ForEach(memorizedEmojis, id: \.self.id) { emoji in
                         CardView(
                             content: emoji.string,
-                            isFaceUp: openedCards.contains { element in
-                                if case emoji.id = element.id {
-                                    return true
-                                } else {
-                                    return false
-                                }
-                            },
+                            isFaceUp: checkIfCardIsFaceUp(emoji: emoji),
+                            isRight: checkIfCardIsRight(emoji: emoji),
                             onPress: { onPressCard(emoji: emoji) }
-                        ).aspectRatio(2/3, contentMode: .fit)
+                        ).aspectRatio(2/3, contentMode: .fit).padding(.vertical)
                     }
                 }
                 .foregroundColor(.red)
@@ -114,15 +173,16 @@ struct ContentView: View {
 
 struct CardView: View {
     var content: String
-    var isFaceUp: Bool = true
+    var isFaceUp: Bool = false
+    var isRight: Bool = false
     var onPress = {};
     
     var body: some View {
         ZStack {
             let shape = RoundedRectangle(cornerRadius: 20)
             
-            if isFaceUp {
-                shape.fill(.white)
+            if (isFaceUp || isRight) {
+                shape.fill(isRight ? Color.teal : Color.white)
                 shape.strokeBorder(lineWidth: 3)
                 Text(content).font(.largeTitle)
             } else {
