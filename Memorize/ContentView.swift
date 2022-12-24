@@ -35,171 +35,50 @@ struct Emoji {
 
 
 struct ContentView: View {
-    @State var openedCards = [] as [Emoji]
-    @State var isRightCards = [] as [Emoji]
-    var memorizedEmojis = [] as [Emoji]
-    
-    let emojis = travelAndPlaces
-    let selectedEmojisCount = 8
-    
-    init(
-        openedCards: [Emoji] = [] as [Emoji],
-        memorizedEmojis: [Emoji] = [] as [Emoji]
-    ) {
-        self.openedCards = openedCards
-        
-        var selectedEmojis = [] as [Emoji];
-        
-        for id in 0..<selectedEmojisCount {
-            let emoji = generateEmoji(id: id, selectedEmojis: selectedEmojis)
-            
-            selectedEmojis.append(emoji)
-        }
-        
-        selectedEmojis.append(
-            contentsOf: selectedEmojis.map {
-                return Emoji(
-                    id: $0.id + selectedEmojisCount,
-                    string: $0.string
-                )
-            }
-        )
-        
-        selectedEmojis.shuffle()
-        
-        self.memorizedEmojis = selectedEmojis;
-    }
-    
-    func generateEmoji(id: Int, selectedEmojis: [Emoji]) -> Emoji {
-        let randomIndex = Int.random(in: 0..<emojis.count)
-        let emoji = Emoji(id: id, string: emojis[randomIndex])
-        
-        let containsEmoji = selectedEmojis.contains { element in
-            if emoji.string == element.string {
-                return true
-            } else {
-                return false
-            }
-        }
-        
-        if containsEmoji {
-            return generateEmoji(id: id, selectedEmojis: selectedEmojis)
-        } else {
-            return emoji
-        }
-    }
-    
-    func checkIfCardIsFaceUp(emoji: Emoji) -> Bool {
-        let isFaceUp = openedCards.contains { element in
-            if case emoji.id = element.id {
-                return true
-            } else {
-                return false
-            }
-        }
-        
-        return isFaceUp;
-    }
-    
-    func checkIfCardIsAlreadyOpened(emoji: Emoji) -> Bool {
-        let isAlreadyOpened = openedCards.contains { element in
-            if (emoji.string == element.string && emoji.id != element.id) {
-                return true
-            } else {
-                return false
-            }
-        }
-        
-        return isAlreadyOpened;
-    }
-    
-    func checkIfCardIsRight(emoji: Emoji) -> Bool {
-        let isRight = isRightCards.contains { element in
-            if case emoji.string = element.string {
-                return true
-            } else {
-                return false
-            }
-        }
-        
-        return isRight
-    }
-        
-    func onPressCard(emoji: Emoji) {
-        if openedCards.count == 2 { return }
-        
-        let isFaceUp = checkIfCardIsFaceUp(emoji: emoji)
-        let isRight = checkIfCardIsAlreadyOpened(emoji: emoji)
-        
-        if (isRight) {
-            isRightCards.append(emoji)
-
-            return
-        }
-        
-        if (isFaceUp) {
-            openedCards = openedCards.filter { $0.id != emoji.id }
-        } else {
-            openedCards.append(emoji)
-        }
-        
-        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) { // Change `2.0` to the desired number of seconds.
-            openedCards = []
-        }
-    }
+    let viewModel: EmojiMemoryGame
     
     var body: some View {
         VStack {
-            Text("Memorize!").font(.title)
             ScrollView {
                 LazyVGrid(columns: [GridItem(.adaptive(minimum: 80))]) {
-                    ForEach(memorizedEmojis, id: \.self.id) { emoji in
-                        CardView(
-                            content: emoji.string,
-                            isFaceUp: checkIfCardIsFaceUp(emoji: emoji),
-                            isRight: checkIfCardIsRight(emoji: emoji),
-                            onPress: { onPressCard(emoji: emoji) }
-                        ).aspectRatio(2/3, contentMode: .fit).padding(.vertical)
+                    ForEach(viewModel.cards) { card in
+                        CardView(card: card)
+                            .aspectRatio(2/3, contentMode: .fit)
                     }
                 }
                 .foregroundColor(.red)
             }
-            .font(.largeTitle)
-            // .padding(.horizontal)
+             .padding(.horizontal)
         }
         .padding(.horizontal)
     }
 }
 
 struct CardView: View {
-    var content: String
-    var isFaceUp: Bool = false
-    var isRight: Bool = false
-    var onPress = {};
+    let card: MemoryGame<String>.Card
     
     var body: some View {
         ZStack {
             let shape = RoundedRectangle(cornerRadius: 20)
             
-            if (isFaceUp || isRight) {
-                shape.fill(isRight ? Color.teal : Color.white)
+            if (card.isFaceUp) {
+                shape.fill().foregroundColor(.white)
                 shape.strokeBorder(lineWidth: 3)
-                Text(content).font(.largeTitle)
+                Text(card.content).font(.largeTitle)
             } else {
                 shape.fill()
             }
-        }
-        .onTapGesture {
-            onPress()
         }
     }
 }
 
 struct ContentView_Previews: PreviewProvider {
+    static let game = EmojiMemoryGame()
+    
     static var previews: some View {
-        ContentView()
+        ContentView(viewModel: game)
             .preferredColorScheme(.dark)
-        ContentView()
+        ContentView(viewModel: game)
             .preferredColorScheme(.light)
     }
 }
