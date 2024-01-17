@@ -37,20 +37,24 @@ struct Emoji {
 struct EmojiMemoryGameView: View {
     @ObservedObject var game: EmojiMemoryGame
     
+    private let aspectRatio: CGFloat = 2/3
+    
     var body: some View {
-        AspectVGrid(game.cards, aspectRatio: 2/3) { card in
-            cardView(for: card)
+        VStack {
+            cards
+                .foregroundColor(game.color)
+                .animation(.default, value: game.cards)
+            
+            Button("Shuffle") {
+                game.shuffle()
+            }
         }
-        .foregroundColor(.red)
-        .padding(.horizontal)
+        .padding()
     }
     
-    @ViewBuilder
-    private func cardView(for card: EmojiMemoryGame.Card) -> some View {
-        if card.isMatched && !card.isFaceUp {
-            Rectangle().opacity(0)
-        } else {
-            CardView(card: card)
+    private var cards: some View {
+        AspectVGrid(game.cards, aspectRatio: aspectRatio) { card in
+            return CardView(card)
                 .padding(4)
                 .onTapGesture {
                     game.choose(card)
