@@ -35,6 +35,8 @@ struct Emoji {
 
 
 struct EmojiMemoryGameView: View {
+    typealias Card = MemoryGame<String>.Card
+    
     @ObservedObject var game: EmojiMemoryGame
     
     private let aspectRatio: CGFloat = 2/3
@@ -44,25 +46,44 @@ struct EmojiMemoryGameView: View {
             cards
                 .foregroundColor(game.color)
             
-            Button("Shuffle") {
-                withAnimation {
-                    game.shuffle()
-                }
+            HStack {
+                score
+                Spacer()
+                shuffle
             }
+            .font(.largeTitle)
         }
         .padding()
+    }
+    
+    private var score: some View {
+        Text("Score: \(game.score)")
+            .animation(nil)
+    }
+    
+    private var shuffle: some View {
+        Button("Shuffle") {
+            withAnimation {
+                game.shuffle()
+            }
+        }
     }
     
     private var cards: some View {
         AspectVGrid(game.cards, aspectRatio: aspectRatio) { card in
             return CardView(card)
                 .padding(4)
+                .overlay(FlyingNumber(number: scoreChange(causedBy: card)))
                 .onTapGesture {
                     withAnimation {
                         game.choose(card)
                     }
                 }
         }
+    }
+    
+    private func scoreChange(causedBy card: Card) -> Int {
+        return 0
     }
 }
 
