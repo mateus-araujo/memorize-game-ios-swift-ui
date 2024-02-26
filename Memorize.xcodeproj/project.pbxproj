@@ -70,12 +70,12 @@
 				C590EA402B586969009F5517 /* CardView.swift */,
 				C584D92829579BF4005850E5 /* EmojiMemoryGame.swift */,
 				C5E81C3C28CCAEC7007B342F /* EmojiMemoryGameView.swift */,
+				C54FEE3E2B59A50900BA258B /* FlyingNumber.swift */,
 				C5E81C3A28CCAEC7007B342F /* MemorizeApp.swift */,
 				C584D9262957978A005850E5 /* MemoryGame.swift */,
 				C561D9C02B3F596E00A6624A /* Pie.swift */,
 				C5E81C3E28CCAEC9007B342F /* Assets.xcassets */,
 				C5E81C4028CCAEC9007B342F /* Preview Content */,
-				C54FEE3E2B59A50900BA258B /* FlyingNumber.swift */,
 			);
 			path = Memorize;
 			sourceTree = "<group>";
